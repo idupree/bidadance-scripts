@@ -29,7 +29,7 @@ _basic() {
   apt-get upgrade -y
   apt-get install -y \
     vim emacs aptitude debconf-utils tmux htop ncdu curl rsync zsh \
-    letsencrypt libapache2-mod-php apache2 \
+    letsencrypt python-letsencrypt-apache libapache2-mod-php apache2 \
     php-curl php-xmlrpc php-mysql php-intl php-gd php-cli php-json \
     php-readline php-mbstring
 }
@@ -62,6 +62,45 @@ _mysql() {
   mysql <<< "CREATE DATABASE IF NOT EXISTS bida_wordpress"
   mysql <<< "GRANT ALL PRIVILEGES ON bida_wordpress.* TO 'bida_wordpress'@'localhost';"
 }
+
+_letsencrypt() {
+  # As root, an interactive `letsencrypt --apache`
+  # set things up on the original server.
+  # What is the transition procedure for a new server?
+  # In case something goes wrong and we need to use the
+  # fallback email, it's the google group email address.
+}
+
+_letsencrypt_renewal() {
+cat >/etc/systemd/system/mycertbotrenew.service <<'EOF'
+[Unit]
+Description=My Certbot Renew
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/letsencrypt renew --non-interactive
+EOF
+cat >/etc/systemd/system/mycertbotrenew.timer <<'EOF'
+[Unit]
+Description=My Certbot Renew
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=12h
+AccuracySec=1h
+
+[Install]
+WantedBy=timers.target
+EOF
+  systemctl daemon-reload
+
+  # make sure it works:
+  systemctl start mycertbotrenew.service
+
+  # automatically run it every so often:
+  systemctl reenable mycertbotrenew.timer
+  systemctl reload-or-restart mycertbotrenew.timer
+
 
 #_copy_ssh_keys() {
 #}
@@ -102,5 +141,7 @@ _mysql
 _copy_srv
 _copy_sql
 _copy_apache
+_letsencrypt
 _apache
+_letsencrypt_renewal
 

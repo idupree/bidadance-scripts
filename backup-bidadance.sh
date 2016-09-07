@@ -22,7 +22,7 @@ mkdir -p "${_backup_dir}"
 ssh $_sshargs '
 set -eux
 cd /
-tar -czf '"${_files_backup}"' /srv/bida-wordpress/ /etc/apache2/
+tar -czf '"${_files_backup}"' /srv/bida-wordpress/ /etc/apache2/ /etc/systemd/system/ /etc/letsencrypt/
 mysqldump --defaults-extra-file=/root/.my-wordpress.cnf --single-transaction bida_wordpress | gzip > '"${_db_backup}"'
 '
 
